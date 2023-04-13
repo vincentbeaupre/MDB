@@ -1,0 +1,19 @@
+﻿@model MDB.Models.User
+
+@{
+    ViewBag.Title = "VerifyDone";
+}
+
+<h2>Vérification réussie</h2>
+<hr />
+
+<p>Bonjour @Model.GetFullName(true).</p>
+<p>Votre adresse courriel est maintenant vérifiée.</p>
+<p>Cliquez sur le lien ci-dessous pour vous connecter.</p>
+<p>Merci et bonnne journée.</p>
+<div>
+    @Html.ActionLink("Connexion", "Login")
+</div>
+
+<hr />
+
