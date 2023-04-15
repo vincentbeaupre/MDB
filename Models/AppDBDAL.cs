@@ -174,7 +174,6 @@ namespace MDB.Models
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Update user failed : Message - {ex.Message}");
-                Rollback();
             }
             return null;
         }

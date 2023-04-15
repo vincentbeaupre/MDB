@@ -184,6 +184,7 @@
     </Compile>
     <Compile Include="Models\MovieView.cs" />
     <Compile Include="Models\OnlineUsers.cs" />
+    <Compile Include="Models\PasswordView.cs" />
     <Compile Include="Models\ResetPasswordCommand.cs">
       <DependentUpon>DBModel.tt</DependentUpon>
     </Compile>
@@ -381,6 +382,11 @@
     <Content Include="Views\Accounts\VerifyError.cshtml" />
     <Content Include="Views\Accounts\Profil.cshtml" />
     <Content Include="Views\Accounts\EmailChangedAlert.cshtml" />
+    <Content Include="Views\Accounts\ResetPasswordCommand.cshtml" />
+    <Content Include="Views\Accounts\ResetPasswordCommandAlert.cshtml" />
+    <Content Include="Views\Accounts\ResetPassword.cshtml" />
+    <Content Include="Views\Accounts\ResetPasswordSuccess.cshtml" />
+    <Content Include="Views\Accounts\ResetPasswordError.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />

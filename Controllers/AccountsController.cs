@@ -90,11 +90,10 @@ namespace MDB.Controllers
                     SendEmailVerification(user, user.Email);
                 }
 
-                return RedirectToAction("SubscribeDone", new {id = user.Id});
+                return RedirectToAction("SubscribeDone", new { id = user.Id });
             }
-            return View();
+            return View(user);
         }
-
         public ActionResult Profil()
         {
             User user = OnlineUsers.GetSessionUser();
@@ -108,23 +107,31 @@ namespace MDB.Controllers
             }
             return RedirectToAction("Login");
         }
-
         [HttpPost]
         public ActionResult Profil(User user)
         {
+            bool emailHasChanged = false;
+
             if (ModelState.IsValid)
             {
-                Debug.WriteLine(Session["UnchangedPasswordCode"]);
-                if (Session["UnchangedPasswordCode"].ToString() == user.Password)
+                string newEmail = user.Email;
+
+                if ((string)Session["UnchangedPasswordCode"] == user.Password)
                 {
-                    user.Password = Session["CurrentPassword"].ToString();
+                    user.ConfirmPassword = user.Password = (string)Session["CurrentPassword"];
+                }
+
+                if ((string)Session["CurrentEmail"] != user.Email)
+                {
+                    user.ConfirmEmail = user.Email = (string)Session["CurrentEmail"];
+                    emailHasChanged = true;
                 }
 
                 if (DB.UpdateUser(user) != null)
                 {
-                    if ((string)Session["CurrentEmail"] != user.Email)
+                    if (emailHasChanged)
                     {
-                        SendEmailVerification(user, user.Email);
+                        SendEmailVerification(user, newEmail);
                         return RedirectToAction("EmailChangedAlert", new { id = user.Id });
                     }
                 }
@@ -137,7 +144,6 @@ namespace MDB.Controllers
             Session["UnchangedPasswordCode"] = Guid.NewGuid().ToString();
             return View(user);
         }
-
         public ActionResult SubscribeDone(int id = 0)
         {
             if (id != 0)
@@ -154,10 +160,77 @@ namespace MDB.Controllers
                 return HttpNotFound();
             }
         }
+        public ActionResult ResetPasswordCommand()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult ResetPasswordCommand(EmailView model)
+        {
+            if (ModelState.IsValid)
+            {
+                string email = model.Email;
 
+                if (DB.EmailExist(email))
+                {
+                    SendPasswordReset(email);
+                    return RedirectToAction("ResetPasswordCommandAlert"); 
+                }
+                else
+                {
+                    return View(model);
+                }
+            }
+            else
+            {
+                return View(model);
+            }
+        }
+        public ActionResult ResetPasswordCommandAlert()
+        {
+            return View();
+        }
+        public ActionResult ResetPassword(int userId, int code)
+        {
+            ResetPasswordCommand resetPasswordCommand = DB.FindResetPasswordCommand(userId, code);
+            
+            if(resetPasswordCommand != null)
+            {
+                var model = new PasswordView { UserId = userId };
+                return View(model);
+            }
+            else
+            {
+                return RedirectToAction("ResetPasswordError");
+            }
+        }
+        [HttpPost]
+        public ActionResult ResetPassword(PasswordView model)
+        {
+            if (ModelState.IsValid)
+            {
+                if(DB.ResetPassword(model.UserId, model.Password))
+                {
+                    return RedirectToAction("ResetPasswordSuccess");
+                }
+                else
+                {
+                    return RedirectToAction("ResetPasswordError");
+                }
+            }
+            return View(model);
+        }
+        public ActionResult ResetPasswordSuccess()
+        {
+            return View();
+        }
+        public ActionResult ResetPasswordError()
+        {
+            return View();
+        }
         public ActionResult EmailChangedAlert(int id = 0)
         {
-            if(id != 0)
+            if (id != 0)
             {
                 User user = DB.Users.Find(id);
                 if (user == null)
@@ -185,17 +258,15 @@ namespace MDB.Controllers
                 return RedirectToAction("VerifyError");
             }
         }
-
         public ActionResult VerifyDone(int id)
         {
             User user = DB.Users.Find(id);
-            if(user == null)
+            if (user == null)
             {
                 return HttpNotFound();
             }
             return View(user);
         }
-
         public ActionResult VerifyError()
         {
             return View();
@@ -228,6 +299,31 @@ namespace MDB.Controllers
                     SMTP.SendEmail(user.GetFullName(), unverifiedEmail.Email, Subject, Body);
                 }
             }
+        }
+        public void SendPasswordReset(string email)
+        {
+
+            ResetPasswordCommand resetPasswordCommand= DB.AddResetPasswordCommand(email);
+            if (resetPasswordCommand != null)
+            {
+                User user = DB.FindUser(resetPasswordCommand.UserId);
+
+                string resetUrl = Url.Action("ResetPassword", "Accounts", null, Request.Url.Scheme);
+                String Link = @"<br/><a href='" + resetUrl + "?userid=" + resetPasswordCommand.UserId + "&code=" + resetPasswordCommand.VerificationCode + @"' > Modifiez votre mot de passe...</a>";
+
+                string Subject = "MDB - Réinitialisation de mot de passe...";
+
+                string Body = "Bonjour " + user.GetFullName(true) + @",<br/><br/>";
+                Body += @"Vous avez demandé de réinitialiser votre mot de passe.  <br/>";
+                Body += @"Procédez en cliquant sur le lien suivant : <br/>";
+                Body += Link;
+                Body += @"<br/><br/>Ce courriel a été généré automatiquement, veuillez ne pas y répondre.";
+                Body += @"<br/><br/>Si vous éprouvez des difficultés ou s'il s'agit d'une erreur, veuillez le signaler à <a href='mailto:"
+                     + SMTP.OwnerEmail + "'>" + SMTP.OwnerName + "</a> (Webmestre du site MDB)";
+
+                SMTP.SendEmail(user.GetFullName(), user.Email, Subject, Body);
+            }
+
         }
     }
 }

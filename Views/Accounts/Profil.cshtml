@@ -9,9 +9,9 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     <script defer>
-    var unchangedPasswordCode = Session["UnchangedPasswordCode"];
+    var unchangedPasswordCode = '@((string)Session["UnchangedPasswordCode"])';
     var showPassword = false;
-setUnchangedPassword();
+    setUnchangedPassword();
     $("#ConfirmEmail").val($("#Email").val());
     $.validator.addMethod(
         "GenderId",
